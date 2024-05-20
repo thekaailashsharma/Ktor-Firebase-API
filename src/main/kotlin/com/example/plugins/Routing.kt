@@ -46,24 +46,50 @@ fun Application.configureRouting() {
             }
         }
 
-        post("/signInFirebase") {
-            val request = call.receive<UserLoginRequest>()
-            val response = service.signInFirebase(request)
-            if (response.second == HttpStatusCode.OK) {
-                val addFireStoreRequest = service.getDocumentFirebase(
-                    request = request,
-                    token = response.first.idToken
-                )
-                if (addFireStoreRequest.second == HttpStatusCode.OK) {
-                    call.respond(addFireStoreRequest.second, addFireStoreRequest.first)
-                } else {
-                    call.respond(status = addFireStoreRequest.second, UserRegistrationResponse(success = false,
-                        message = "Either User does not exists or some error occurred"))
+        get("/signInFirebase") {
+            val parameters = call.parameters
+            parameters["email"]?.let { email ->
+                parameters["password"]?.let { password ->
+                    val request = UserLoginRequest(email = email, password = password)
+                    val response = service.signInFirebase(request)
+                    if (response.second == HttpStatusCode.OK) {
+                        val addFireStoreRequest = service.getDocumentFirebase(
+                            request = request,
+                            token = response.first.idToken
+                        )
+                        if (addFireStoreRequest.second == HttpStatusCode.OK) {
+                            call.respond(addFireStoreRequest.second, addFireStoreRequest.first)
+                        } else {
+                            call.respond(
+                                status = addFireStoreRequest.second, UserRegistrationResponse(
+                                    success = false,
+                                    message = "Either User does not exists or some error occurred"
+                                )
+                            )
+                        }
+                    } else {
+                        call.respond(
+                            status = response.second, UserRegistrationResponse(
+                                success = false,
+                                message = "Either User does not exists or some error occurred"
+                            )
+                        )
+                    }
                 }
-            } else {
-                call.respond(status = response.second, UserRegistrationResponse(success = false,
-                    message = "Either User does not exists or some error occurred"))
+
+                call.respond(
+                    status = HttpStatusCode.BadRequest, UserRegistrationResponse(
+                        success = false,
+                        message = "Pass Password as parameter"
+                    )
+                )
             }
+            call.respond(
+                status = HttpStatusCode.BadRequest, UserRegistrationResponse(
+                    success = false,
+                    message = "Pass Username or Password as parameters"
+                )
+            )
         }
     }
 }
