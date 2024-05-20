@@ -8,3 +8,9 @@ data class UserRegistrationRequest(
     val email: String,
     val password: String
 )
+
+@Serializable
+data class UserLoginRequest(
+    val email: String,
+    val password: String
+)

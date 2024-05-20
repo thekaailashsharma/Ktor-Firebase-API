@@ -1,6 +1,7 @@
 package com.example.plugins
 
 import com.example.apiService.ApiService
+import com.example.models.UserLoginRequest
 import com.example.models.UserRegistrationRequest
 import com.example.models.UserRegistrationResponse
 import com.example.models.addFirestore.*
@@ -42,6 +43,26 @@ fun Application.configureRouting() {
             } else {
                 call.respond(status = response.second, UserRegistrationResponse(success = false,
                     message = "Either User already exists or some error occurred"))
+            }
+        }
+
+        post("/signInFirebase") {
+            val request = call.receive<UserLoginRequest>()
+            val response = service.signInFirebase(request)
+            if (response.second == HttpStatusCode.OK) {
+                val addFireStoreRequest = service.getDocumentFirebase(
+                    request = request,
+                    token = response.first.idToken
+                )
+                if (addFireStoreRequest.second == HttpStatusCode.OK) {
+                    call.respond(addFireStoreRequest.second, addFireStoreRequest.first)
+                } else {
+                    call.respond(status = addFireStoreRequest.second, UserRegistrationResponse(success = false,
+                        message = "Either User does not exists or some error occurred"))
+                }
+            } else {
+                call.respond(status = response.second, UserRegistrationResponse(success = false,
+                    message = "Either User does not exists or some error occurred"))
             }
         }
     }

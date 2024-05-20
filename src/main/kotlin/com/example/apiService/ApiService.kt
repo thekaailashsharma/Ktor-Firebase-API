@@ -1,10 +1,9 @@
 package com.example.apiService
 
-import com.example.models.SignUpFirebaseAuth
-import com.example.models.SignUpFirebaseResponse
-import com.example.models.UserRegistrationRequest
+import com.example.models.*
 import com.example.models.addFirestore.AddFireStoreRequest
 import com.example.models.addFirestore.FireStoreResponse
+import com.example.models.getFireStore.getFireStoreResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -53,4 +52,45 @@ class ApiService(private val client: HttpClient) {
         println("Response is ${c}")
         return Pair(c.body<FireStoreResponse>(), c.status)
     }
+
+    suspend fun signInFirebase(request: UserLoginRequest): Pair<SignInFirebaseResponse, HttpStatusCode> {
+        val signUpUrl = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?" +
+                "key=$apiKey"
+        val c = client.post {
+            url(signUpUrl)
+            setBody(
+                SignUpFirebaseAuth(
+                    email = request.email,
+                    password = request.password,
+                    returnSecureToken = true
+                )
+            )
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            headers {
+                append("Accept", "*/*")
+                append("Content-Type", "application/json")
+            }
+        }
+
+        println("Login Token is ${c}")
+        return Pair(c.body<SignInFirebaseResponse>(), c.status)
+    }
+
+    suspend fun getDocumentFirebase(request: UserLoginRequest, token: String?): Pair<getFireStoreResponse, HttpStatusCode> {
+        val getFireStoreUrl = "https://firestore.googleapis.com/v1/projects/travvvy-f1b70/databases/(default)/" +
+                "documents/userInfo/${request.email}"
+        val c = client.get {
+            url(getFireStoreUrl)
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            headers {
+                append("Authorization", "Bearer $token")
+                append("Accept", "*/*")
+                append("Content-Type", "application/json")
+            }
+        }
+        println("Get Document Response is ${c}")
+        return Pair(c.body<getFireStoreResponse>(), c.status)
+    }
+
+
 }
