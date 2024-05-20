@@ -14,7 +14,8 @@ import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
 
 fun Application.configureRouting() {
-    val apiKey = System.getenv("apiKey") ?: ""
+    val apiKey = System.getenv("apiKey") ?: throw Exception("apiKey Not Found")
+    val projectId = System.getenv("projectId") ?: throw Exception("projectId Not Found")
     val service by inject<ApiService>()
     routing {
 
