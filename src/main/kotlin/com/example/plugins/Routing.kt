@@ -140,5 +140,31 @@ fun Application.configureRouting() {
                 )
             )
         }
+
+        post("/updateUser") {
+            val request = call.receive<UserRegistrationRequest>()
+            val response = service.signUpFirebase(request)
+            if (response.second == HttpStatusCode.OK) {
+                val addFireStoreRequest = service.addDocumentFirebase(
+                    request = AddFireStoreRequest(
+                        fields = FieldsX(
+                            email = EmailX(stringValue = request.email),
+                            pass = PassX(stringValue = request.password),
+                            name = NameX(stringValue = request.username)
+                        )
+                    ),
+                    token = response.first.idToken
+                )
+                if (addFireStoreRequest.second == HttpStatusCode.OK) {
+                    call.respond(addFireStoreRequest.second, addFireStoreRequest.first)
+                } else {
+                    call.respond(status = addFireStoreRequest.second, UserRegistrationResponse(success = false,
+                        message = "Either User already exists or some error occurred"))
+                }
+            } else {
+                call.respond(status = response.second, UserRegistrationResponse(success = false,
+                    message = "Either User already exists or some error occurred"))
+            }
+        }
     }
 }
